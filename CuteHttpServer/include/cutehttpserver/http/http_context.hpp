@@ -7,22 +7,20 @@
 
 namespace cutehttpserver {
 
-namespace http {
+enum class HttpRequestParseState {
+    REQUEST_LINE,
+    HEADERS,
+    BODY,
+    FINISH,
+};
 
 class HttpContext {
 public:
-    enum class HttpRequestParseState {
-        REQUEST_LINE,
-        HEADERS,
-        BODY,
-        FINISH,
-    };
-
     HttpContext() : state_(HttpRequestParseState::REQUEST_LINE) {}
     ~HttpContext() = default;
 
 public:
-    bool ParseRequest(cutemuduo::Buffer* buff);
+    bool ParseRequest(cutemuduo::Buffer* buff, cutemuduo::Timestamp const& receive_time);
 
     // 解析请求行(<方法> <请求路径?查询参数> <协议版本>)
     bool ParseRequestLine(std::string const& line);
@@ -40,7 +38,5 @@ private:
     HttpRequestParseState state_;  // 当前解析状态
     HttpRequest request_;          // 请求对象
 };
-
-}  // namespace http
 
 }  // namespace cutehttpserver

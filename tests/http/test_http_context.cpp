@@ -1,5 +1,6 @@
 #include <cutehttpserver/http/http_context.hpp>
 #include <cutemuduo/buffer.hpp>
+#include <cutemuduo/timestamp.hpp>
 #include <iostream>
 #include <string>
 
@@ -19,13 +20,13 @@ int main() {
     HttpContext http_context;
     Buffer buffer;
     buffer.Append(request.c_str(), request.size());
-    if (http_context.ParseRequest(&buffer)) {
+    if (http_context.ParseRequest(&buffer, Timestamp::Now())) {
         auto request{http_context.GetRequest()};
         cout << "Method: " + request.GetStringMethod() << '\n';
         cout << "Path: " + request.GetPath() << '\n';
         cout << "Version: " + request.GetVersion() << '\n';
         cout << "Content-Length: " + std::to_string(request.GetContentLength()) << '\n';
-        cout << "Content: " + request.GetContent() << '\n';
+        cout << "Content: " + request.GetRequestBody() << '\n';
         cout << "Query Params: " + request.GetQueryParams("id") << '\n';
         cout << "Header: " + request.GetHeader("Host") << '\n';
         cout << "Success!\n";

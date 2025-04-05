@@ -5,9 +5,7 @@
 
 namespace cutehttpserver {
 
-namespace http {
-
-bool HttpContext::ParseRequest(cutemuduo::Buffer* buff) {
+bool HttpContext::ParseRequest(cutemuduo::Buffer* buff, cutemuduo::Timestamp const& receive_time) {
     while (true) {
         // GET /index.html HTTP/1.1\r\n ← 请求行
         // Host: www.example.com\r\n    ← 请求头
@@ -24,6 +22,7 @@ bool HttpContext::ParseRequest(cutemuduo::Buffer* buff) {
                     if (!ParseRequestLine(line)) {  // 解析请求行
                         return false;
                     }
+                    request_.SetReceiveTime(receive_time);
                     state_ = HttpRequestParseState::HEADERS;  // 转 -> 解析请求头
                 } else {
                     return false;  // 没有足够数据(都没有 \r\n)
@@ -42,7 +41,7 @@ bool HttpContext::ParseRequest(cutemuduo::Buffer* buff) {
                         }
                     } else {  // 遇到空行说明头部解析结束
                         auto content_length{request_.GetHeader("Content-Length")};
-                        if (content_length.empty()) {                // 没有 Content-Length 说明没有请求体
+                        if (content_length.empty()) {  // 没有 Content-Length 说明没有请求体
                             state_ = HttpRequestParseState::FINISH;  // 可以结束了
                             return true;
                         } else {  // 有 Content-Length 继续解析请求体
@@ -126,10 +125,8 @@ bool HttpContext::ParseHeaderLine(std::string const& line) {
 }
 
 bool HttpContext::ParseBody(std::string body_data) {
-    request_.SetContent(std::move(body_data));
+    request_.SetRequestBody(std::move(body_data));
     return true;
 }
-
-}  // namespace http
 
 }  // namespace cutehttpserver
