@@ -1,4 +1,8 @@
 build/
+
+# !build/packages/
+# !build/packages/**
+
 .cache/
 .xmake/
 compile_commands.json

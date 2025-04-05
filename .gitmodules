@@ -1,0 +1,3 @@
+[submodule "3rd-party/CuteMuduo"]
+	path = 3rd-party/CuteMuduo
+	url = git@github.com:shaojunjie0912/CuteMuduo.git
