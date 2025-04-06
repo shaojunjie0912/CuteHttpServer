@@ -16,8 +16,8 @@ enum class HttpRequestParseState {
 
 class HttpContext {
 public:
-    HttpContext() : state_(HttpRequestParseState::REQUEST_LINE) {}
-    ~HttpContext() = default;
+    HttpContext();
+    ~HttpContext();
 
 public:
     bool ParseRequest(cutemuduo::Buffer* buff, cutemuduo::Timestamp const& receive_time);
@@ -32,7 +32,7 @@ public:
     bool ParseBody(std::string body_data);
 
 public:
-    HttpRequest GetRequest() const { return request_; }
+    HttpRequest GetRequest() const;
 
 private:
     HttpRequestParseState state_;  // 当前解析状态

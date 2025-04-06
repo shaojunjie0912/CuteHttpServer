@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 //
@@ -24,62 +23,45 @@ enum class HttpStatusCode {
 
 class HttpResponse {
 public:
-    HttpResponse(bool close = true)
-        : status_code_(HttpStatusCode::kUnknown), close_connection_(close) {}
+    HttpResponse(bool close = true);
+
+    ~HttpResponse();
 
 public:
     // 设置 HTTP 版本
-    void SetVersion(std::string version) { http_version_ = std::move(version); }
+    void SetVersion(std::string version);
 
     // 设置状态码
-    void SetStatusCode(HttpStatusCode code) { status_code_ = code; }
+    void SetStatusCode(HttpStatusCode code);
 
     // 获取状态码
-    HttpStatusCode GetStatusCode() const { return status_code_; }
+    HttpStatusCode GetStatusCode() const;
 
     // 设置状态信息
-    void SetStatusMessage(std::string message) { status_message_ = std::move(message); }
+    void SetStatusMessage(std::string message);
 
-    void SetCloseConnection(bool close) { close_connection_ = close; }
+    void SetCloseConnection(bool close);
 
-    bool IsCloseConnection() const { return close_connection_; }
+    bool IsCloseConnection() const;
 
     // 添加响应头的一行
-    void AddHeader(std::string key, std::string value) {
-        response_headers_.emplace(std::move(key), std::move(value));
-    }
+    void AddHeader(std::string key, std::string value);
 
     // void SetHeader(std::)
 
     // 设置响应头 Content-Type
-    void SetContentType(std::string type) { response_headers_["Content-Type"] = std::move(type); }
+    void SetContentType(std::string type);
 
     // 设置响应头 Content-Length
-    void SetContentLength(uint64_t length) {
-        response_headers_["Content-Length"] = std::to_string(length);
-    }
+    void SetContentLength(uint64_t length);
 
     // 设置响应体
-    void SetResponseBody(std::string body) {
-        SetContentLength(body.size());
-        response_body_ = std::move(body);
-    }
+    void SetResponseBody(std::string body);
 
 public:
-    std::string GetResponse() const {
-        std::ostringstream oss_response;
-        oss_response << http_version_ << " " << std::to_string(static_cast<int>(status_code_))
-                     << " " << status_message_ << "\r\n";
-        for (auto const& [key, value] : response_headers_) {
-            oss_response << key << ": " << value << "\r\n";
-        }
-        oss_response << (close_connection_ ? "Connection: close\r\n" : "Connection: keep-alive\r\n")
-                     << "\r\n";
-        oss_response << response_body_;
-        return oss_response.str();
-    }
+    std::string GetResponse() const;
 
-    void AppendToBuffer(cutemuduo::Buffer* buff) const { buff->Append(GetResponse().c_str()); }
+    void AppendToBuffer(cutemuduo::Buffer* buff) const;
 
 private:
     std::string http_version_;                                       // HTTP 版本

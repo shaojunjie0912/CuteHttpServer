@@ -5,6 +5,12 @@
 
 namespace cutehttpserver {
 
+HttpContext::HttpContext() : state_(HttpRequestParseState::REQUEST_LINE) {}
+
+HttpContext::~HttpContext() = default;
+
+HttpRequest HttpContext::GetRequest() const { return request_; }
+
 bool HttpContext::ParseRequest(cutemuduo::Buffer* buff, cutemuduo::Timestamp const& receive_time) {
     while (true) {
         // GET /index.html HTTP/1.1\r\n ← 请求行
