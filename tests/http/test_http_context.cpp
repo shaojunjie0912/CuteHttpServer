@@ -5,7 +5,7 @@
 #include <string>
 
 using namespace std;
-using namespace cutehttpserver::http;
+using namespace cutehttpserver;
 using namespace cutemuduo;
 
 int main() {

@@ -9,6 +9,8 @@
 #include <cutehttpserver/http/http_context.hpp>
 #include <cutehttpserver/http/http_request.hpp>
 #include <cutehttpserver/http/http_response.hpp>
+#include <cutehttpserver/router/router.hpp>
+#include <cutehttpserver/session/session_manager.hpp>
 
 namespace cutehttpserver {
 
@@ -36,11 +38,13 @@ private:
     void HandleRequest(HttpRequest const& request, HttpResponse* response);
 
 private:
-    cutemuduo::InetAddress listen_addr_;
-    cutemuduo::TcpServer tcp_server_;
-    cutemuduo::EventLoop main_loop_;
-    HttpCallback http_callback_;
-    bool use_ssl_;
+    cutemuduo::InetAddress listen_addr_;               // 监听地址
+    cutemuduo::TcpServer tcp_server_;                  // TCP 服务器
+    cutemuduo::EventLoop main_loop_;                   // 主循环
+    HttpCallback http_callback_;                       //
+    Router router_;                                    // 路由
+    std::unique_ptr<SessionManager> session_manager_;  // 会话管理器
+    bool use_ssl_;                                     // 是否使用 SSL
 };
 
 }  // namespace cutehttpserver

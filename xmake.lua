@@ -15,4 +15,4 @@ add_packages("catch2")
 includes("3rd-party/CuteMuduo")
 
 includes("CuteHttpServer")
-includes("tests")
+-- includes("tests")

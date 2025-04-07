@@ -13,6 +13,8 @@ public:
 
     virtual void Save(std::shared_ptr<Session> session) = 0;
 
+    virtual void Update(std::shared_ptr<Session> session_ptr) = 0;
+
     virtual std::shared_ptr<Session> Load(std::string session_id) = 0;
 
     virtual void Remove(std::string session_id) = 0;
