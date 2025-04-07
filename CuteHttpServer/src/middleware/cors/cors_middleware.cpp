@@ -67,20 +67,25 @@ void CorsMiddleware::AddCorsHeaders(HttpResponse& response, const std::string& o
     // Access-Control-Allow-Credentials: true
     // Access-Control-Max-Age: 3600
     try {
+        // 设置允许的源
         response.AddHeader("Access-Control-Allow-Origin", origin);
 
+        // 设置允许的方法
         if (!cors_config_.allowed_methods.empty()) {
             response.AddHeader("Access-Control-Allow-Methods", Join(cors_config_.allowed_methods, ", "));
         }
 
+        // 设置允许的请求头
         if (!cors_config_.allowed_headers.empty()) {
             response.AddHeader("Access-Control-Allow-Headers", Join(cors_config_.allowed_headers, ", "));
         }
 
+        // 设置允许凭证
         if (cors_config_.allow_credentials) {
             response.AddHeader("Access-Control-Allow-Credentials", "true");
         }
 
+        // 设置预检请求的有效期
         response.AddHeader("Access-Control-Max-Age", std::to_string(cors_config_.max_age));
         LOG_DEBUG("CORS headers added: %s", response.GetHeaders().c_str());
     } catch (std::exception const& e) {
