@@ -14,12 +14,12 @@ concept StringType = std::same_as<std::remove_cvref_t<T>, std::string>;
 
 enum class HttpRequestMethod {
     kInvalid,
-    kGet,
-    kPost,
-    kHead,
-    kPut,
-    kDelete,
-    kOptions,
+    kGet,      // 请求服务器发送指定的资源
+    kPost,     // 向服务器发送数据
+    kHead,     // 类似 GET, 但服务器只返回响应头, 不返回响应体
+    kPut,      // 向服务器上传数据
+    kDelete,   // 请求服务器删除指定的资源
+    kOptions,  // 询问服务器支持哪些 HTTP 方法
 };
 
 class HttpRequest {
