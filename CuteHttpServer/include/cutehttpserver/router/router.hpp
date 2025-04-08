@@ -15,13 +15,17 @@ namespace cutehttpserver {
 class Router {
 public:
     using HandlerPtr = std::shared_ptr<RouterHandler>;
-    using HandlerCallback =
-        std::function<void(HttpRequest const&, HttpResponse*)>;  // TODO: 指针 * ?
+    using HandlerCallback = std::function<void(HttpRequest const&, HttpResponse*)>;  // TODO: 指针 * ?
 
     // 路由映射表的键 (由请求方法 + URI 组成)
     struct RouteKey {
         HttpRequestMethod method_;
         std::string path_;
+
+        // NOTE: 作为哈希表的键需要有 == 方法
+        bool operator==(RouteKey const& other) const {
+            return method_ == other.method_ && path_ == other.path_;
+        }
     };
 
     // RouteKey 哈希函数
@@ -42,8 +46,7 @@ public:
     // 注册动态路由(模式匹配), 存储在动态数组中
     void RegisterRegexHandler(HttpRequestMethod method, std::string path, HandlerPtr handler);
 
-    void RegisterRegexCallback(HttpRequestMethod method, std::string path,
-                               HandlerCallback callback);
+    void RegisterRegexCallback(HttpRequestMethod method, std::string path, HandlerCallback callback);
 
     bool Route(HttpRequest const& request, HttpResponse* response);
 
@@ -70,8 +73,7 @@ private:
         std::regex path_regex_;
         HandlerCallback callback_;
 
-        RouteCallbackObj(HttpRequestMethod method, std::regex path_regex,
-                         HandlerCallback const& callback)
+        RouteCallbackObj(HttpRequestMethod method, std::regex path_regex, HandlerCallback const& callback)
             : method_(method), path_regex_(path_regex), callback_(callback) {}
     };
 

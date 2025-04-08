@@ -12,22 +12,20 @@ namespace cutehttpserver {
 SessionManager::SessionManager(std::unique_ptr<SessionStorage> session_storage)
     : session_storage_ptr_(std::move(session_storage)), random_generator_(std::random_device{}()) {}
 
-std::shared_ptr<Session> SessionManager::GetSession(HttpRequest const& request,
-                                                    HttpResponse* response) {
+std::shared_ptr<Session> SessionManager::GetSession(HttpRequest const& request, HttpResponse* response) {
     // 1. 请求中包含 session_id 且 session_id 有对应的 session 且 session 没有过期
     if (auto session_id{GetSessionIdFromRequestCookie(request)}; !session_id.empty()) {
         if (auto session_ptr{session_storage_ptr_->Load(session_id)};
             !session_ptr && !session_ptr->IsExpired()) {
-            session_ptr->SetManager(
-                this);               // 为现有 session 设置管理器 TODO: 新创建的 session 要设置吗
-            session_ptr->Refresh();  // 有新的 session 则刷新过期时间
+            session_ptr->SetManager(this);  // 为现有 session 设置管理器 TODO: 新创建的 session 要设置吗
+            session_ptr->Refresh();         // 有新的 session 则刷新过期时间
             return session_ptr;
         }
     }
     // 2. 请求中不包含 session_id 或者 session_id 没有对应的 session 或者 session_id 过期
     LOG_INFO("SessionId not found in request or session with sessionid not found/expired!");
     auto new_session_id{GenerateSessionId()};
-    auto new_session_ptr{std::make_shared<Session>(new_session_id)};
+    auto new_session_ptr{std::make_shared<Session>(new_session_id, this)};
     SetSessionCookie(new_session_id, response);  // HACK: 设置 response 中 cookie
     new_session_ptr->Refresh();                  // 刷新过期时间
     // new_session_ptr->SetManager(this);            // TODO:
