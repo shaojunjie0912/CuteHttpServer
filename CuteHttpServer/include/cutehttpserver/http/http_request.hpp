@@ -75,6 +75,16 @@ public:
 
     std::string GetRequestBody() const;
 
+    void Swap(HttpRequest& other) {
+        std::swap(method_, other.method_);
+        std::swap(path_, other.path_);
+        std::swap(path_params_, other.path_params_);
+        std::swap(query_params_, other.query_params_);
+        std::swap(version_, other.version_);
+        std::swap(request_headers_, other.request_headers_);
+        std::swap(receive_time_, other.receive_time_);
+    }
+
 private:
     HttpRequestMethod method_;                                      // 请求方法
     std::string path_;                                              // 请求路径

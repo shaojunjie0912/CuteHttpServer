@@ -1,3 +1,5 @@
+#include <any>
+//
 #include <cutemuduo/logger.hpp>
 //
 #include <cutehttpserver/http/http_server.hpp>
@@ -16,13 +18,126 @@ HttpServer::HttpServer(int port, std::string name, bool use_ssl, TcpServer::Opti
                                           Timestamp receive_time) { OnMessage(conn, buffer, receive_time); });
 }
 
+void HttpServer::Start() {
+    LOG_INFO("HttpServer[%s] starts listening on %s", tcp_server_.name().c_str(),
+             tcp_server_.ip_port().c_str());
+    tcp_server_.Start();
+    main_loop_.Loop();
+}
+
+EventLoop* HttpServer::GetLoop() const { return tcp_server_.loop(); }
+
 void HttpServer::SetThreadNum(int num_threads) { tcp_server_.SetThreadNum(num_threads); }
 
-void HttpServer::OnMessage(TcpConnectionPtr const& conn, Buffer* buffer, Timestamp receive_time) {
+void HttpServer::SetHttpCallback(HttpCallback cb) { http_callback_ = std::move(cb); }
+
+void HttpServer::Get(std::string path, HttpCallback cb) {
+    router_.RegisterCallback(HttpRequestMethod::kGet, std::move(path), std::move(cb));
+}
+
+void HttpServer::Get(std::string path, Router::HandlerPtr handler) {
+    router_.RegisterHandler(HttpRequestMethod::kGet, std::move(path), handler);
+}
+
+void HttpServer::Post(std::string path, HttpCallback cb) {
+    router_.RegisterCallback(HttpRequestMethod::kPost, std::move(path), std::move(cb));
+}
+
+void HttpServer::Post(std::string path, Router::HandlerPtr handler) {
+    router_.RegisterHandler(HttpRequestMethod::kPost, std::move(path), handler);
+}
+
+void HttpServer::AddRoute(HttpRequestMethod method, std::string path, Router::HandlerPtr handler) {
+    router_.RegisterRegexHandler(method, std::move(path), handler);
+}
+
+void HttpServer::AddRoute(HttpRequestMethod method, std::string path, Router::HandlerCallback cb) {
+    router_.RegisterRegexCallback(method, std::move(path), std::move(cb));
+}
+
+void HttpServer::SetSessionManager(std::unique_ptr<SessionManager> manager) {
+    session_manager_ = std::move(manager);
+}
+
+SessionManager* HttpServer::GetSessionManager() const { return session_manager_.get(); }
+
+void HttpServer::AddMiddleware(std::shared_ptr<Middleware> middleware) {
+    middleware_chain_.AddMiddleware(middleware);
+}
+
+void HttpServer::EnableSsl(bool enable) { use_ssl_ = enable; }
+
+void HttpServer::SetSslConfig(SslConfig const& config) {
+    if (use_ssl_) {
+        ssl_context_ = std::make_unique<SslContext>(config);
+        if (!ssl_context_->Init()) {
+            LOG_ERROR("Failed to initialize SSL context");
+            std::terminate();
+        }
+    }
+}
+
+// TODO: 回顾
+void HttpServer::OnConnection(TcpConnectionPtr const& conn) {
+    if (conn->IsConnected()) {
+        if (use_ssl_) {
+            auto ssl_conn = std::make_unique<SslConnection>(conn, ssl_context_.get());
+            ssl_conn->SetMessageCallback(
+                [this](TcpConnectionPtr const& conn, Buffer* buffer, Timestamp receive_time) {
+                    OnMessage(conn, buffer, receive_time);
+                });
+            ssl_connections_[conn] = std::move(ssl_conn);
+            ssl_connections_[conn]->StartHandshake();
+        }
+        conn->SetContext(HttpContext{});
+    } else {
+        if (use_ssl_) {
+            ssl_connections_.erase(conn);
+        }
+    }
+}
+
+// TODO: 回顾
+void HttpServer::OnMessage(TcpConnectionPtr const& conn, Buffer* buf, Timestamp receive_time) {
     try {
         if (use_ssl_) {
-            LOG_INFO("OnMessage use ssl");
-            // TODO: 写不下去了...
+            LOG_INFO("OnMessage use ssl is true");
+            // 1.查找对应的SSL连接
+            auto it = ssl_connections_.find(conn);
+            if (it != ssl_connections_.end()) {
+                LOG_INFO("onMessage sslConns_ is not empty");
+                // 2. SSL连接处理数据
+                it->second->OnRead(conn, buf, receive_time);
+
+                // 3. 如果 SSL 握手还未完成，直接返回
+                if (!it->second->IsHandshakeCompleted()) {
+                    LOG_INFO("onMessage sslConns_ is not empty");
+                    return;
+                }
+
+                // 4. 从SSL连接的解密缓冲区获取数据
+                Buffer* decrypted_buf = it->second->GetDecryptedBuffer();
+                if (decrypted_buf->ReadableBytes() == 0) {
+                    return;  // 没有解密后的数据
+                }
+
+                // 5. 使用解密后的数据进行HTTP 处理
+                buf = decrypted_buf;  // 将 buf 指向解密后的数据
+                LOG_INFO("onMessage decryptedBuf is not empty");
+            }
+        }
+        // HttpContext对象用于解析出buf中的请求报文，并把报文的关键信息封装到HttpRequest对象中
+        HttpContext* context = std::any_cast<HttpContext>(conn->GetMutableContext());
+        if (!context->ParseRequest(buf, receive_time))  // 解析一个http请求
+        {
+            // 如果解析http报文过程中出错
+            conn->Send("HTTP/1.1 400 Bad Request\r\n\r\n");
+            conn->Shutdown();
+        }
+        // 如果buf缓冲区中解析出一个完整的数据包才封装响应报文
+        if (context->GotAll()) {
+            OnRequest(conn, context->GetRequest());
+            context->Reset();
         }
     } catch (std::exception const& e) {
         LOG_ERROR("Exception: OnMessage: %s", e.what());

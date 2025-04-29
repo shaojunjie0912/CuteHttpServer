@@ -32,6 +32,15 @@ public:
     bool ParseBody(std::string body_data);
 
 public:
+    bool GotAll() const { return state_ == HttpRequestParseState::FINISH; }
+
+    void Reset() {
+        state_ = HttpRequestParseState::REQUEST_LINE;
+        HttpRequest dummy_data;
+        request_.Swap(dummy_data);
+    }
+
+public:
     HttpRequest GetRequest() const;
 
 private:

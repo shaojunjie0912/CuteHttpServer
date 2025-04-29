@@ -1,13 +1,13 @@
 #pragma once
 
+// std
 #include <functional>
 #include <unordered_map>
-//
+// cutemuduo
 #include <cutemuduo/event_loop.hpp>
 #include <cutemuduo/inet_address.hpp>
 #include <cutemuduo/tcp_server.hpp>
-//
-
+// cutehttpserver
 #include <cutehttpserver/http/http_context.hpp>
 #include <cutehttpserver/http/http_request.hpp>
 #include <cutehttpserver/http/http_response.hpp>
@@ -20,6 +20,7 @@
 namespace cutehttpserver {
 
 using cutemuduo::Buffer;
+using cutemuduo::EventLoop;
 using cutemuduo::TcpConnectionPtr;
 using cutemuduo::TcpServer;
 using cutemuduo::Timestamp;
@@ -31,9 +32,37 @@ public:
     HttpServer(int port, std::string name, bool use_ssl = false,
                TcpServer::Option option = TcpServer::Option::kNoReusePort);
 
+public:
+    void Start();
+
+public:
     void SetThreadNum(int num_threads);
 
-    void Start();
+    EventLoop* GetLoop() const;
+
+    void SetHttpCallback(HttpCallback cb);
+
+    void Get(std::string path, HttpCallback cb);
+
+    void Get(std::string path, Router::HandlerPtr handler);
+
+    void Post(std::string path, HttpCallback cb);
+
+    void Post(std::string path, Router::HandlerPtr handler);
+
+    void AddRoute(HttpRequestMethod method, std::string path, Router::HandlerPtr handler);
+
+    void AddRoute(HttpRequestMethod method, std::string path, Router::HandlerCallback cb);
+
+    void SetSessionManager(std::unique_ptr<SessionManager> manager);
+
+    SessionManager* GetSessionManager() const;
+
+    void AddMiddleware(std::shared_ptr<Middleware> middleware);
+
+    void EnableSsl(bool enable);
+
+    void SetSslConfig(SslConfig const& config);
 
 private:
     void OnConnection(TcpConnectionPtr const& conn);
