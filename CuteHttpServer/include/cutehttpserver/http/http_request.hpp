@@ -1,6 +1,5 @@
 #pragma once
 
-#include <concepts>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -8,9 +7,6 @@
 #include <cutemuduo/timestamp.hpp>
 
 namespace cutehttpserver {
-
-template <typename T>
-concept StringType = std::same_as<std::remove_cvref_t<T>, std::string>;
 
 enum class HttpRequestMethod {
     kInvalid,
